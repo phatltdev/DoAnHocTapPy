@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DoAn - Patient Management</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.32/dist/sweetalert2.min.css" rel="stylesheet">
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet"/>
+    <link href="https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme@1.5.2/dist/select2-bootstrap4.min.css"
+          rel="stylesheet"/>
+</head>
+<style>
+    .input-group-text {
+        display: flex;
+        align-items: center;
+        padding: .375rem .75rem;
+        font-size: 1rem;
+        font-weight: 400;
+        line-height: 1.5;
+        color: var(--bs-body-color);
+        text-align: center;
+        white-space: nowrap;
+        background-color: var(--bs-tertiary-bg);
+        border: var(--bs-border-width) solid var(--bs-border-color);
+        border-radius: var(--bs-border-radius);
+        border-radius: 0px;
+    }
+
+    .mb-3 {
+        margin-bottom: 0.2rem !important;
+    }
+</style>
+<body>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.32/dist/sweetalert2.all.min.js"></script>
+<!-- before your existing diabetesdb.js include (after jquery & bootstrap bundle) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/js/bootstrap-datepicker.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/locales/bootstrap-datepicker.vi.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script src="{{ url_for('static', filename='js/common_function.js') }}"></script>
+<script src="{{ url_for('static', filename='js/diabetesdb.js') }}"></script>
+<div class="row" style="font-family: monospace, revert-layer;">
+    <div class="col-md-7">
+        <div class="container" style="height: 100vh">
+            <div class="row" style="margin-bottom: 10px; text-align: center">
+                <div class="col-md-12">
+                    <h4>DANH SÁCH BỆNH NHÂN</h4>
+                </div>
+            </div>
+            <div class="row" style="margin-bottom: 10px; text-align: right">
+                <div class="col-2">
+                    <input type="text" class="form-control" id="txt-search-ngaykham" placeholder="Ngày khám...">
+                </div>
+                <div class="col-10">
+                    <button type="button" class="btn btn-secondary-light">
+                        <i class="bi bi-search"></i>
+                        Tìm kiếm
+                    </button>
+                    <button type="button" class="btn btn-secondary-light" onclick="reloadDanhSachBenhNhan()">
+                        <i class="bi bi-arrow-clockwise"></i>
+                        Làm mới
+                    </button>
+                    <button type="button" class="btn btn-secondary-light" id="addBenhNhan">
+                        <i class="bi bi-plus-lg"></i>
+                        Thêm
+                    </button>
+                </div>
+            </div>
+            <div class="row" style="margin-bottom: 10px">
+                <div class="col-md-12">
+                    <table class="table table-bordered">
+                        <thead>
+                        <tr>
+                            <th style="width: 10%">ID</th>
+                            <th style="width: 50%">Họ tên</th>
+                            <th style="width: 10%">Ngày sinh</th>
+                            <th style="width: 10%">Nam/Nữ</th>
+                            <th style="width: 15%">Số điện thoại</th>
+                            <th style="width: 5%"></th>
+                        </tr>
+                        </thead>
+                        <tbody id="patientTableBody">
+                        <!-- Patient data will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-5">
+        <div class="container" style="height: 50vh">
+            <div class="row" style="margin-bottom: 10px; text-align: center">
+                <div class="col-md-12">
+                    <h4>THÔNG TIN BỆNH NHÂN</h4>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="input-group mb-3">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text">ID</span>
+                        </div>
+                        <input type="text" class="form-control" placeholder="ID..." aria-describedby="basic-addon1"
+                               id="fmr-id">
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="input-group mb-3">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text">Họ tên</span>
+                        </div>
+                        <input type="text" class="form-control" placeholder="Họ tên..." aria-describedby="basic-addon1"
+                               id="fmr-hoten">
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="input-group mb-3">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text">Giới tính</span>
+                        </div>
+                        <select type="text" class="form-control" placeholder="Giới tính..."
+                                aria-describedby="basic-addon1" id="fmr-gioitinh">
+                            <option value="1">Nam</option>
+                            <option value="0">Nữ</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="input-group mb-3">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text">Ngày sinh</span>
+                        </div>
+                        <input type="text" class="form-control" placeholder="Ngày sinh..."
+                               aria-describedby="basic-addon1" id="fmr-ngaysinh">
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="input-group mb-3">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text">Số ĐT</span>
+                        </div>
+                        <input type="text" class="form-control" placeholder="Số điện thoại..."
+                               aria-describedby="basic-addon1" id="fmr-phone">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="input-group mb-3">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text">Số CMT</span>
+                        </div>
+                        <input type="text" class="form-control" placeholder="Số CMT..."
+                               aria-describedby="basic-addon1" id="fmr-socmt">
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="input-group mb-3">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text">Email</span>
+                        </div>
+                        <input type="text" class="form-control" placeholder="Email..." aria-describedby="basic-addon1"
+                               id="fmr-email">
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="input-group mb-3">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text">Tỉnh</span>
+                        </div>
+                        <select type="text" class="form-control" aria-describedby="basic-addon1" id="fmr-tinh"></select>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="input-group mb-3">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text">Xã</span>
+                        </div>
+                        <select type="text" class="form-control" aria-describedby="basic-addon1" id="fmr-xa"></select>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="input-group mb-3">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text">Số nhà/đường</span>
+                        </div>
+                        <input class="form-control" placeholder="Số nhà/đường..." aria-describedby="basic-addon1" id="fmr-sonha">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="benhNhanModal" tabindex="-1" style="font-family: monospace, revert-layer;">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="formTitle"></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="patientForm">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="txt-id" class="form-label">ID:</label>
+                                    <input type="text" class="form-control" id="txt-id" readonly>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="txt-hoten" class="form-label">Họ tên:</label>
+                                    <input type="text" class="form-control" id="txt-hoten" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="txt-gioitinh" class="form-label">Giới tính:</label>
+                                    <select class="form-control" id="txt-gioitinh">
+                                        <option value="1">Nam</option>
+                                        <option value="0">Nữ</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="txt-namsinh" class="form-label">Năm sinh:</label>
+                                    <input type="text" class="form-control" id="txt-namsinh" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="txt-phone" class="form-label">Số điện thoại:</label>
+                                    <input type="text" class="form-control" id="txt-phone" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="txt-socmt" class="form-label">Số CMT:</label>
+                                    <input type="text" class="form-control" id="txt-socmt" required>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="txt-email" class="form-label">Email:</label>
+                                    <input type="email" class="form-control" id="txt-email">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="txt-tinh" class="form-label">Tỉnh/thành phố:</label>
+                                    <select class="form-control" id="txt-tinh"></select>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="txt-xa" class="form-label">Xã/phường:</label>
+                                    <select class="form-control" id="txt-xa"></select>
+                                </div>
+                                <!--                            <div class="mb-3">-->
+                                <!--                                <label for="slb-tinh" class="form-label">Tỉnh:</label>-->
+                                <!--                                <div class="input-group mb-3">-->
+                                <!--                                    <select type="text" class="form-control" aria-label="Recipient's username"-->
+                                <!--                                            aria-describedby="button-quanly-ds-tinh" id="slb-tinh"></select>-->
+                                <!--                                    <button class="btn btn-outline-secondary" type="button" id="button-quanly-ds-tinh">-->
+                                <!--                                        <i class="bi bi-card-list"></i></button>-->
+                                <!--                                </div>-->
+                                <!--                            </div>-->
+
+                                <!--                            <div class="mb-3">-->
+                                <!--                                <label for="slb-xa" class="form-label">Xã:</label>-->
+                                <!--                                <div class="input-group mb-3">-->
+                                <!--                                    <select type="text" class="form-control" aria-label="Recipient's username"-->
+                                <!--                                            aria-describedby="button-quanly-ds-xa" id="slb-xa"></select>-->
+                                <!--                                    <button class="btn btn-outline-secondary" type="button" id="button-quanly-ds-xa"><i-->
+                                <!--                                            class="bi bi-card-list"></i></button>-->
+                                <!--                                </div>-->
+                                <!--                            </div>-->
+
+                                <div class="mb-3">
+                                    <label for="txt-sonha" class="form-label">Số nhà/đường:</label>
+                                    <textarea class="form-control" id="txt-sonha" rows="5"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <div class="row">
+                        <div class="col-md-12 text-end">
+                            <button type="button" class="btn btn-secondary-light class-them-moi"
+                                    onclick="benhNhan('THEM')">
+                                <i class="bi bi-plus-lg"></i>
+                                Thêm
+                            </button>
+                            <button type="button" class="btn btn-secondary-light class-sua-xoa"
+                                    onclick="benhNhan('SUA')">
+                                <i class="bi bi-pencil-square"></i>
+                                Lưu thay đổi
+                            </button>
+                            <button type="button" class="btn btn-secondary-light class-sua-xoa"
+                                    onclick="benhNhan('XOA')">
+                                <i class="bi bi-x-lg" style="color: red"></i>
+                                <label style="color: red">Xóa</label>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
