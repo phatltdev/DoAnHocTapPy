@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>So sánh hiệu suất Cache</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <style>
+        body {
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .card {
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .result-box {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            background-color: #f8f9fa;
+        }
+        .faster {
+            background-color: #d4edda;
+            border: 2px solid #28a745;
+        }
+        .slower {
+            background-color: #fff3cd;
+            border: 2px solid #ffc107;
+        }
+        .time-display {
+            font-size: 24px;
+            font-weight: bold;
+            color: #007bff;
+        }
+        .btn-test {
+            min-width: 150px;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .stat-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .stat-value {
+            font-size: 28px;
+            font-weight: bold;
+            color: #007bff;
+        }
+        .stat-label {
+            font-size: 14px;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+        .progress-container {
+            margin: 15px 0;
+            display: none;
+        }
+        .comparison-table {
+            margin-top: 20px;
+        }
+        .comparison-table th {
+            background-color: #007bff;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="mb-4">
+            <i class="bi bi-speedometer2"></i>
+            So sánh hiệu suất Cache Redis
+        </h1>
+
+        <!-- Cache Statistics -->
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-graph-up"></i> Thống kê Cache</h5>
+            </div>
+            <div class="card-body">
+                <div class="stats-grid" id="cacheStats">
+                    <div class="stat-item">
+                        <div class="stat-value" id="totalKeys">-</div>
+                        <div class="stat-label">Tổng số keys</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="tinhCached">-</div>
+                        <div class="stat-label">Cache Tỉnh</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="xaCached">-</div>
+                        <div class="stat-label">Cache Xã</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="hitRate">-</div>
+                        <div class="stat-label">Tỷ lệ hit</div>
+                    </div>
+                </div>
+                <div class="mt-3 text-end">
+                    <button class="btn btn-info" onclick="loadCacheStats()">
+                        <i class="bi bi-arrow-clockwise"></i> Làm mới
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cache Management -->
+        <div class="card">
+            <div class="card-header bg-warning">
+                <h5 class="mb-0"><i class="bi bi-trash"></i> Quản lý Cache</h5>
+            </div>
+            <div class="card-body">
+                <div class="btn-group" role="group">
+                    <button class="btn btn-danger" onclick="clearCache('all')">
+                        <i class="bi bi-x-circle"></i> Xóa toàn bộ cache
+                    </button>
+                    <button class="btn btn-warning" onclick="clearCache('tinh')">
+                        <i class="bi bi-map"></i> Xóa cache Tỉnh
+                    </button>
+                    <button class="btn btn-warning" onclick="clearCache('xa')">
+                        <i class="bi bi-geo-alt"></i> Xóa cache Xã
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Performance Test: Danh sách Tỉnh -->
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="bi bi-map"></i> Test: Danh sách Tỉnh</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Với Cache</h6>
+                        <button class="btn btn-primary btn-test mb-3" onclick="testWithCache('tinh')">
+                            <i class="bi bi-play-fill"></i> Chạy test
+                        </button>
+                        <div class="result-box" id="tinhCacheResult">
+                            <div>Thời gian: <span class="time-display" id="tinhCacheTime">-</span></div>
+                            <div>Số bản ghi: <span id="tinhCacheCount">-</span></div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Không Cache</h6>
+                        <button class="btn btn-secondary btn-test mb-3" onclick="testWithoutCache('tinh')">
+                            <i class="bi bi-play-fill"></i> Chạy test
+                        </button>
+                        <div class="result-box" id="tinhNoCacheResult">
+                            <div>Thời gian: <span class="time-display" id="tinhNoCacheTime">-</span></div>
+                            <div>Số bản ghi: <span id="tinhNoCacheCount">-</span></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <button class="btn btn-success" onclick="runBothTests('tinh')">
+                        <i class="bi bi-lightning-fill"></i> Chạy cả hai test
+                    </button>
+                    <div id="tinhComparison" class="alert alert-info mt-3" style="display: none;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Performance Test: Danh sách Xã -->
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="bi bi-geo-alt"></i> Test: Danh sách Xã</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label for="selectTinh">Chọn tỉnh:</label>
+                    <select class="form-select" id="selectTinh">
+                        <option value="">-- Chọn tỉnh --</option>
+                    </select>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Với Cache</h6>
+                        <button class="btn btn-primary btn-test mb-3" onclick="testWithCache('xa')">
+                            <i class="bi bi-play-fill"></i> Chạy test
+                        </button>
+                        <div class="result-box" id="xaCacheResult">
+                            <div>Thời gian: <span class="time-display" id="xaCacheTime">-</span></div>
+                            <div>Số bản ghi: <span id="xaCacheCount">-</span></div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Không Cache</h6>
+                        <button class="btn btn-secondary btn-test mb-3" onclick="testWithoutCache('xa')">
+                            <i class="bi bi-play-fill"></i> Chạy test
+                        </button>
+                        <div class="result-box" id="xaNoCacheResult">
+                            <div>Thời gian: <span class="time-display" id="xaNoCacheTime">-</span></div>
+                            <div>Số bản ghi: <span id="xaNoCacheCount">-</span></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <button class="btn btn-success" onclick="runBothTests('xa')">
+                        <i class="bi bi-lightning-fill"></i> Chạy cả hai test
+                    </button>
+                    <div id="xaComparison" class="alert alert-info mt-3" style="display: none;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Multiple Runs Test -->
+        <div class="card">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0"><i class="bi bi-arrow-repeat"></i> Test đa lần</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label for="numRuns">Số lần chạy:</label>
+                    <input type="number" class="form-control" id="numRuns" value="10" min="1" max="100">
+                </div>
+                <button class="btn btn-dark" onclick="runMultipleTests()">
+                    <i class="bi bi-arrow-repeat"></i> Chạy test nhiều lần
+                </button>
+                <div class="progress-container" id="progressContainer">
+                    <div class="progress">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                             id="progressBar" role="progressbar" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div id="multiTestResults" class="mt-3"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const API_BASE = window.location.origin;
+
+        // Load cache statistics
+        async function loadCacheStats() {
+            try {
+                const response = await fetch(`${API_BASE}/api/cache/stats`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.getElementById('totalKeys').textContent = data.total_keys;
+                    document.getElementById('tinhCached').textContent = data.tinh_cached ? '✓' : '✗';
+                    document.getElementById('xaCached').textContent = data.xa_cached_count;
+                    
+                    const hits = data.redis_info.keyspace_hits || 0;
+                    const misses = data.redis_info.keyspace_misses || 0;
+                    const total = hits + misses;
+                    const hitRate = total > 0 ? ((hits / total) * 100).toFixed(2) + '%' : '0%';
+                    document.getElementById('hitRate').textContent = hitRate;
+                }
+            } catch (error) {
+                console.error('Error loading cache stats:', error);
+            }
+        }
+
+        // Clear cache
+        async function clearCache(type) {
+            if (!confirm(`Bạn có chắc muốn xóa cache ${type}?`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/cache/clear`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ type })
+                });
+                const data = await response.json();
+                
+                alert(data.message);
+                loadCacheStats();
+            } catch (error) {
+                alert('Lỗi khi xóa cache: ' + error.message);
+            }
+        }
+
+        // Test with cache
+        async function testWithCache(type) {
+            const url = type === 'tinh' 
+                ? `${API_BASE}/api/danhsachtinh`
+                : `${API_BASE}/api/danhsachxa?ma_tinh=${document.getElementById('selectTinh').value}`;
+            
+            if (type === 'xa' && !document.getElementById('selectTinh').value) {
+                alert('Vui lòng chọn tỉnh!');
+                return;
+            }
+
+            const startTime = performance.now();
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                const endTime = performance.now();
+                const duration = (endTime - startTime).toFixed(2);
+
+                document.getElementById(`${type}CacheTime`).textContent = duration + ' ms';
+                document.getElementById(`${type}CacheCount`).textContent = data.length;
+                document.getElementById(`${type}CacheResult`).classList.remove('faster', 'slower');
+                
+                return { duration: parseFloat(duration), count: data.length };
+            } catch (error) {
+                alert('Lỗi: ' + error.message);
+            }
+        }
+
+        // Test without cache
+        async function testWithoutCache(type) {
+            const url = type === 'tinh' 
+                ? `${API_BASE}/api/nocache/danhsachtinh`
+                : `${API_BASE}/api/nocache/danhsachxa?ma_tinh=${document.getElementById('selectTinh').value}`;
+            
+            if (type === 'xa' && !document.getElementById('selectTinh').value) {
+                alert('Vui lòng chọn tỉnh!');
+                return;
+            }
+
+            const startTime = performance.now();
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                const endTime = performance.now();
+                const duration = (endTime - startTime).toFixed(2);
+
+                document.getElementById(`${type}NoCacheTime`).textContent = duration + ' ms';
+                document.getElementById(`${type}NoCacheCount`).textContent = data.length;
+                document.getElementById(`${type}NoCacheResult`).classList.remove('faster', 'slower');
+                
+                return { duration: parseFloat(duration), count: data.length };
+            } catch (error) {
+                alert('Lỗi: ' + error.message);
+            }
+        }
+
+        // Run both tests and compare
+        async function runBothTests(type) {
+            const cacheResult = await testWithCache(type);
+            await new Promise(resolve => setTimeout(resolve, 100)); // Small delay
+            const noCacheResult = await testWithoutCache(type);
+
+            if (cacheResult && noCacheResult) {
+                const improvement = ((noCacheResult.duration - cacheResult.duration) / noCacheResult.duration * 100).toFixed(2);
+                const speedup = (noCacheResult.duration / cacheResult.duration).toFixed(2);
+                
+                const comparisonDiv = document.getElementById(`${type}Comparison`);
+                comparisonDiv.style.display = 'block';
+                
+                if (cacheResult.duration < noCacheResult.duration) {
+                    comparisonDiv.className = 'alert alert-success mt-3';
+                    comparisonDiv.innerHTML = `
+                        <strong><i class="bi bi-check-circle-fill"></i> Cache nhanh hơn!</strong><br>
+                        Cải thiện: ${improvement}% (nhanh hơn ${speedup}x)<br>
+                        Cache: ${cacheResult.duration}ms vs Không cache: ${noCacheResult.duration}ms
+                    `;
+                    document.getElementById(`${type}CacheResult`).classList.add('faster');
+                    document.getElementById(`${type}NoCacheResult`).classList.add('slower');
+                } else {
+                    comparisonDiv.className = 'alert alert-warning mt-3';
+                    comparisonDiv.innerHTML = `
+                        <strong><i class="bi bi-exclamation-triangle-fill"></i> Không cache nhanh hơn!</strong><br>
+                        Cache: ${cacheResult.duration}ms vs Không cache: ${noCacheResult.duration}ms
+                    `;
+                    document.getElementById(`${type}CacheResult`).classList.add('slower');
+                    document.getElementById(`${type}NoCacheResult`).classList.add('faster');
+                }
+            }
+        }
+
+        // Run multiple tests
+        async function runMultipleTests() {
+            const numRuns = parseInt(document.getElementById('numRuns').value);
+            const progressContainer = document.getElementById('progressContainer');
+            const progressBar = document.getElementById('progressBar');
+            const resultsDiv = document.getElementById('multiTestResults');
+            
+            progressContainer.style.display = 'block';
+            resultsDiv.innerHTML = '<p>Đang chạy test...</p>';
+
+            const cacheResults = [];
+            const noCacheResults = [];
+
+            for (let i = 0; i < numRuns; i++) {
+                const cacheRes = await testWithCache('tinh');
+                if (cacheRes) cacheResults.push(cacheRes.duration);
+                
+                await new Promise(resolve => setTimeout(resolve, 50));
+                
+                const noCacheRes = await testWithoutCache('tinh');
+                if (noCacheRes) noCacheResults.push(noCacheRes.duration);
+                
+                const progress = ((i + 1) / numRuns * 100).toFixed(0);
+                progressBar.style.width = progress + '%';
+                progressBar.textContent = progress + '%';
+                
+                await new Promise(resolve => setTimeout(resolve, 50));
+            }
+
+            const avgCache = (cacheResults.reduce((a, b) => a + b, 0) / cacheResults.length).toFixed(2);
+            const avgNoCache = (noCacheResults.reduce((a, b) => a + b, 0) / noCacheResults.length).toFixed(2);
+            const improvement = ((avgNoCache - avgCache) / avgNoCache * 100).toFixed(2);
+
+            resultsDiv.innerHTML = `
+                <div class="alert alert-success">
+                    <h5><i class="bi bi-bar-chart-fill"></i> Kết quả sau ${numRuns} lần chạy:</h5>
+                    <table class="table table-sm">
+                        <tr>
+                            <th>Loại</th>
+                            <th>Trung bình</th>
+                            <th>Min</th>
+                            <th>Max</th>
+                        </tr>
+                        <tr>
+                            <td><strong>Với Cache</strong></td>
+                            <td>${avgCache} ms</td>
+                            <td>${Math.min(...cacheResults).toFixed(2)} ms</td>
+                            <td>${Math.max(...cacheResults).toFixed(2)} ms</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Không Cache</strong></td>
+                            <td>${avgNoCache} ms</td>
+                            <td>${Math.min(...noCacheResults).toFixed(2)} ms</td>
+                            <td>${Math.max(...noCacheResults).toFixed(2)} ms</td>
+                        </tr>
+                    </table>
+                    <p class="mb-0"><strong>Cache cải thiện: ${improvement}% (nhanh hơn ${(avgNoCache / avgCache).toFixed(2)}x)</strong></p>
+                </div>
+            `;
+
+            progressContainer.style.display = 'none';
+            progressBar.style.width = '0%';
+        }
+
+        // Load provinces list
+        async function loadProvinces() {
+            try {
+                const response = await fetch(`${API_BASE}/api/danhsachtinh`);
+                const data = await response.json();
+                
+                const select = document.getElementById('selectTinh');
+                data.forEach(item => {
+                    const option = document.createElement('option');
+                    option.value = item.id;
+                    option.textContent = item.ten;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error loading provinces:', error);
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            loadCacheStats();
+            loadProvinces();
+            
+            // Auto refresh stats every 5 seconds
+            setInterval(loadCacheStats, 5000);
+        });
+    </script>
+</body>
+</html>

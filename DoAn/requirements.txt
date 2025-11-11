@@ -10,3 +10,4 @@ setuptools>=65.5.0
 sqlalchemy-cockroachdb
 psycopg2-binary
 waitress
+redis==7.0.1
