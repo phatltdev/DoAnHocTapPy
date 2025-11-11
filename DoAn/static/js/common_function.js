@@ -81,41 +81,29 @@ function isValidDDMMYYYY(dateStr) {
     if (day < 1 || day > daysInMonth[month - 1]) return false;
     return true;
 }
-function isValidDate(dateStr, options = {}) {
-    const { minAge = 0, maxAge = 150 } = options;
-    if (!isValidDDMMYYYY(dateStr)) return false;
-
-    const [, dStr, mStr, yStr] = dateStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-    const day = parseInt(dStr, 10);
-    const month = parseInt(mStr, 10);
-    const year = parseInt(yStr, 10);
-
-    const birth = new Date(year, month - 1, day);
-    if (isNaN(birth.getTime())) return false;
-
-    const today = new Date();
-    // remove time portion for accurate comparison
-    today.setHours(0,0,0,0);
-
-    if (birth > today) return false; // future date not allowed
-
-    // compute age
-    let age = today.getFullYear() - year;
-    const mDiff = today.getMonth() - (month - 1);
-    if (mDiff < 0 || (mDiff === 0 && today.getDate() < day)) age--;
-
-    if (age < minAge || age > maxAge) return false;
-    return true;
+function isValidDate(date) {
+    if(date.length === 10){
+        var temp = date.split(' ')[0].split('/');
+        var d = new Date(temp[2] + '/' + temp[1] + '/' + temp[0]);
+        return !(
+            d &&
+            (d.getMonth() + 1) == temp[1] &&
+            d.getDate() == Number(temp[0]) &&
+            d.getFullYear() == Number(temp[2])
+        );
+    }else{
+        return true;
+    }
 }
+
 function formatUuid(uuid) {
     if (!uuid) return '';
     const s = String(uuid).replace(/-/g, '');
     return '...' + s.slice(-4);
 }
-function clearPatientForm() {
-    const form = document.getElementById('patientForm');
+function clearPatientForm(id) {
+    const form = document.getElementById(id); //patientForm
     if (!form) return;
-
     // native reset (restores initial values)
     form.reset();
 
@@ -158,8 +146,8 @@ function getCurrentDate(format = 'dd/mm/yyyy') {
     return `${day}/${month}/${year}`;
 }
 
-function loadDanhSachTinh() {
-    var $tinh = $('#txt-tinh');
+function loadDanhSachTinh(maTinhChoosed) {
+    var $tinh = $('#txt-tinh, #fmr-tinh');
     fetch('/api/danhsachtinh')
         .then(function (r) {
             return r.json();
@@ -170,13 +158,16 @@ function loadDanhSachTinh() {
                 var opt = new Option(t.ten, t.id, false, false);
                 $tinh.append(opt);
             });
+            if (maTinhChoosed) {
+                $tinh.val(maTinhChoosed).trigger('change');
+            }
         })
         .catch(function (err) {
             console.error('Failed to load danh sach tinh', err);
         });
 }
-function loadDanhSachXa(maTinh) {
-    var $xa = $('#txt-xa');
+function loadDanhSachXa(maTinh, idXa, maXaChoosed) {
+    var $xa = $('#' + idXa);// txt-xa
     $xa.empty();
     fetch('/api/danhsachxa?ma_tinh=' + encodeURIComponent(maTinh))
         .then(function (r) {
@@ -188,6 +179,9 @@ function loadDanhSachXa(maTinh) {
                 var opt = new Option(x.ten, x.id, false, false);
                 $xa.append(opt);
             });
+            if (maXaChoosed) {
+                $xa.val(maXaChoosed).trigger('change');
+            }
         })
         .catch(function (err) {
             console.error('Failed to load danh sach xa', err);

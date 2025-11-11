@@ -43,13 +43,14 @@ class BenhNhan(db.Model):
     ma_xa = db.Column(db.String(10))
     dia_chi = db.Column(db.String(500))
     email = db.Column(db.String(100))
+    created_at = db.Column(db.DateTime(timezone=True), server_default=text('now()'), nullable=False)
     phieu_tests = db.relationship('LanKham', backref='benhnhan', cascade="all, delete-orphan")
 
 class LanKham(db.Model):
     __tablename__ = 'lankham'
     id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, server_default=text('gen_random_uuid()'))
     benh_nhan_id = db.Column(UUID(as_uuid=True), db.ForeignKey('benhnhan.id'), nullable=False)
-    ngay_kham = db.Column(db.Date)
+    ngay_kham = db.Column(db.DateTime(timezone=True), server_default=text('now()'), nullable=False)
     bac_si = db.Column(db.String(100))
     chieuCao = db.Column(db.Float)
     canNang = db.Column(db.Float)
@@ -94,7 +95,12 @@ lkSchemas = lanKhamSchema(many=True)
 def generate_crud_endpoints(model, schema, plural_schema, model_name):
     @app.route(f'/api/{model_name}', methods=['GET'], endpoint=f'{model_name}_get_all')
     def get_all():
-        all_items = model.query.all()
+        query = model.query
+        created_col = getattr(model, 'ho_ten', None)
+        if created_col is not None:
+            # change to .asc() if you prefer oldest-first
+            query = query.order_by(created_col.desc())
+        all_items = query.all()
         result = plural_schema.dump(all_items)
         return jsonify(result)
 
@@ -135,7 +141,8 @@ generate_crud_endpoints(LanKham, lkSchema, lkSchemas, 'lankham')
 
 @app.route('/')
 def index():
-    return render_template('diabetesdb.html')
+    # return render_template('diabetesdb.html')
+    return render_template('kham-benh-main.html')
 @app.route('/api/danhsachtinh', methods=['GET'])
 def danhsachtinh():
     rows = (db.session.query(

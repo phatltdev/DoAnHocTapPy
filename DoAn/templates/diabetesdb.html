@@ -94,195 +94,284 @@
         </div>
     </div>
     <div class="col-md-5">
-        <div class="container" style="height: 50vh">
-            <div class="row" style="margin-bottom: 10px; text-align: center">
-                <div class="col-md-12">
-                    <h4>THÔNG TIN BỆNH NHÂN</h4>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-md-12">
-                    <div class="input-group mb-3">
-                        <div class="input-group-prepend">
-                            <span class="input-group-text">ID</span>
+        <div class="row">
+            <div class="col-md-12">
+                <div class="container" style="height: 400px">
+                    <div class="row" style="margin-bottom: 10px; text-align: center">
+                        <div class="col-md-12">
+                            <h4>THÔNG TIN BỆNH NHÂN</h4>
                         </div>
-                        <input type="text" class="form-control" placeholder="ID..." aria-describedby="basic-addon1"
-                               id="fmr-id">
+                    </div>
+                    <form id="formBenhNhan">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="input-group mb-3">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text">ID</span>
+                                    </div>
+                                    <input type="text" class="form-control" placeholder="ID..." aria-describedby="basic-addon1"
+                                           id="fmr-id">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="input-group mb-3">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text">Họ tên</span>
+                                    </div>
+                                    <input type="text" class="form-control" placeholder="Họ tên..." aria-describedby="basic-addon1"
+                                           id="fmr-hoten">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="input-group mb-3">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text">Giới tính</span>
+                                    </div>
+                                    <select type="text" class="form-control" placeholder="Giới tính..."
+                                            aria-describedby="basic-addon1" id="fmr-gioitinh">
+                                        <option value="1">Nam</option>
+                                        <option value="0">Nữ</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="input-group mb-3">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text">Ngày sinh</span>
+                                    </div>
+                                    <input type="text" class="form-control" placeholder="Ngày sinh..."
+                                           aria-describedby="basic-addon1" id="fmr-ngaysinh">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="input-group mb-3">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text">Số ĐT</span>
+                                    </div>
+                                    <input type="text" class="form-control" placeholder="Số điện thoại..."
+                                           aria-describedby="basic-addon1" id="fmr-phone">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="input-group mb-3">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text">Số CMT</span>
+                                    </div>
+                                    <input type="text" class="form-control" placeholder="Số CMT..."
+                                           aria-describedby="basic-addon1" id="fmr-socmt">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="input-group mb-3">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text">Email</span>
+                                    </div>
+                                    <input type="text" class="form-control" placeholder="Email..." aria-describedby="basic-addon1"
+                                           id="fmr-email">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="input-group mb-3">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text">Tỉnh</span>
+                                    </div>
+                                    <select type="text" class="form-control" aria-describedby="basic-addon1" id="fmr-tinh"></select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="input-group mb-3">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text">Xã</span>
+                                    </div>
+                                    <select type="text" class="form-control" aria-describedby="basic-addon1" id="fmr-xa"></select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="input-group mb-3">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text">Số nhà/đường</span>
+                                    </div>
+                                    <input class="form-control" placeholder="Số nhà/đường..." aria-describedby="basic-addon1"
+                                           id="fmr-sonha">
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                    <div class="row">
+                        <div class="col-md-12 text-end">
+                            <button type="button" class="btn btn-secondary-light">
+                                <i class="bi bi-journal-plus" style="color: green"></i>
+                                <label style="color: green">Thêm lần khám mới</label>
+                            </button>
+                            <button type="button" class="btn btn-secondary-light" id="suaBenhNhan">
+                                <i class="bi bi-pencil-square"></i>
+                                Lưu thay đổi
+                            </button>
+                            <button type="button" class="btn btn-secondary-light" id="xoaBenhNhan">
+                                <i class="bi bi-x-lg" style="color: red"></i>
+                                <label style="color: red">Xóa</label>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="row">
-                <div class="col-md-12">
-                    <div class="input-group mb-3">
-                        <div class="input-group-prepend">
-                            <span class="input-group-text">Họ tên</span>
+        </div>
+        <div class="row" style="margin-top: 10px">
+            <div class="col-12">
+                <div class="container" style="height: 300px">
+                    <div class="row" style="margin-bottom: 10px; text-align: center">
+                        <div class="col-md-12">
+                            <h4>LỊCH SỬ KHÁM BỆNH</h4>
                         </div>
-                        <input type="text" class="form-control" placeholder="Họ tên..." aria-describedby="basic-addon1"
-                               id="fmr-hoten">
                     </div>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="input-group mb-3">
-                        <div class="input-group-prepend">
-                            <span class="input-group-text">Giới tính</span>
+                    <div class="row" style="margin-bottom: 10px">
+                        <div class="col-md-12">
+                            <table class="table table-bordered">
+                                <thead>
+                                <tr>
+                                    <th style="width: 15%">ID</th>
+                                    <th style="width: 20%">Ngày khám</th>
+                                    <th style="width: 25%">Bác sĩ</th>
+                                    <th style="width: 40%">Ghi chú</th>
+                                </tr>
+                                </thead>
+                                <tbody id="historyTableBody">
+                                <!-- History data will be loaded here -->
+                                </tbody>
+                            </table>
                         </div>
-                        <select type="text" class="form-control" placeholder="Giới tính..."
-                                aria-describedby="basic-addon1" id="fmr-gioitinh">
-                            <option value="1">Nam</option>
-                            <option value="0">Nữ</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="input-group mb-3">
-                        <div class="input-group-prepend">
-                            <span class="input-group-text">Ngày sinh</span>
-                        </div>
-                        <input type="text" class="form-control" placeholder="Ngày sinh..."
-                               aria-describedby="basic-addon1" id="fmr-ngaysinh">
-                    </div>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="input-group mb-3">
-                        <div class="input-group-prepend">
-                            <span class="input-group-text">Số ĐT</span>
-                        </div>
-                        <input type="text" class="form-control" placeholder="Số điện thoại..."
-                               aria-describedby="basic-addon1" id="fmr-phone">
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="input-group mb-3">
-                        <div class="input-group-prepend">
-                            <span class="input-group-text">Số CMT</span>
-                        </div>
-                        <input type="text" class="form-control" placeholder="Số CMT..."
-                               aria-describedby="basic-addon1" id="fmr-socmt">
-                    </div>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-md-12">
-                    <div class="input-group mb-3">
-                        <div class="input-group-prepend">
-                            <span class="input-group-text">Email</span>
-                        </div>
-                        <input type="text" class="form-control" placeholder="Email..." aria-describedby="basic-addon1"
-                               id="fmr-email">
-                    </div>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="input-group mb-3">
-                        <div class="input-group-prepend">
-                            <span class="input-group-text">Tỉnh</span>
-                        </div>
-                        <select type="text" class="form-control" aria-describedby="basic-addon1" id="fmr-tinh"></select>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="input-group mb-3">
-                        <div class="input-group-prepend">
-                            <span class="input-group-text">Xã</span>
-                        </div>
-                        <select type="text" class="form-control" aria-describedby="basic-addon1" id="fmr-xa"></select>
-                    </div>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-md-12">
-                    <div class="input-group mb-3">
-                        <div class="input-group-prepend">
-                            <span class="input-group-text">Số nhà/đường</span>
-                        </div>
-                        <input class="form-control" placeholder="Số nhà/đường..." aria-describedby="basic-addon1" id="fmr-sonha">
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="modal fade" id="benhNhanModal" tabindex="-1" style="font-family: monospace, revert-layer;">
+    <div class="modal fade" id="benhNhanModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false" style="font-family: monospace, revert-layer;">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="formTitle"></h5>
+                    <h5 class="modal-title" id="formTitle">THÊM BỆNH NHÂN</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <form id="patientForm">
                         <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="txt-id" class="form-label">ID:</label>
-                                    <input type="text" class="form-control" id="txt-id" readonly>
+                            <div class="col-md-12">
+                                <div class="input-group mb-3">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text">ID:</span>
+                                    </div>
+                                    <input type="text" class="form-control" aria-describedby="basic-addon1" id="txt-id"
+                                           readonly>
                                 </div>
-                                <div class="mb-3">
-                                    <label for="txt-hoten" class="form-label">Họ tên:</label>
-                                    <input type="text" class="form-control" id="txt-hoten" required>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="input-group mb-3">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text">Họ tên:</span>
+                                    </div>
+                                    <input type="text" class="form-control" aria-describedby="basic-addon1"
+                                           id="txt-hoten">
                                 </div>
-                                <div class="mb-3">
-                                    <label for="txt-gioitinh" class="form-label">Giới tính:</label>
-                                    <select class="form-control" id="txt-gioitinh">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-5">
+                                <div class="input-group mb-3">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text">Phái:</span>
+                                    </div>
+                                    <select class="form-control" aria-describedby="basic-addon1" id="txt-gioitinh">
                                         <option value="1">Nam</option>
                                         <option value="0">Nữ</option>
                                     </select>
                                 </div>
-                                <div class="mb-3">
-                                    <label for="txt-namsinh" class="form-label">Năm sinh:</label>
-                                    <input type="text" class="form-control" id="txt-namsinh" required>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="txt-phone" class="form-label">Số điện thoại:</label>
-                                    <input type="text" class="form-control" id="txt-phone" required>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="txt-socmt" class="form-label">Số CMT:</label>
-                                    <input type="text" class="form-control" id="txt-socmt" required>
-                                </div>
-
-                                <div class="mb-3">
-                                    <label for="txt-email" class="form-label">Email:</label>
-                                    <input type="email" class="form-control" id="txt-email">
+                            </div>
+                            <div class="col-md-7">
+                                <div class="input-group mb-3">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text">Ngày sinh:</span>
+                                    </div>
+                                    <input type="text" class="form-control" aria-describedby="basic-addon1"
+                                           id="txt-namsinh">
                                 </div>
                             </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="txt-tinh" class="form-label">Tỉnh/thành phố:</label>
-                                    <select class="form-control" id="txt-tinh"></select>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="input-group mb-3">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text">Số ĐT:</span>
+                                    </div>
+                                    <input type="text" class="form-control" aria-describedby="basic-addon1"
+                                           id="txt-phone">
                                 </div>
-                                <div class="mb-3">
-                                    <label for="txt-xa" class="form-label">Xã/phường:</label>
-                                    <select class="form-control" id="txt-xa"></select>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="input-group mb-3">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text">Số CMT:</span>
+                                    </div>
+                                    <input type="text" class="form-control" aria-describedby="basic-addon1"
+                                           id="txt-socmt">
                                 </div>
-                                <!--                            <div class="mb-3">-->
-                                <!--                                <label for="slb-tinh" class="form-label">Tỉnh:</label>-->
-                                <!--                                <div class="input-group mb-3">-->
-                                <!--                                    <select type="text" class="form-control" aria-label="Recipient's username"-->
-                                <!--                                            aria-describedby="button-quanly-ds-tinh" id="slb-tinh"></select>-->
-                                <!--                                    <button class="btn btn-outline-secondary" type="button" id="button-quanly-ds-tinh">-->
-                                <!--                                        <i class="bi bi-card-list"></i></button>-->
-                                <!--                                </div>-->
-                                <!--                            </div>-->
-
-                                <!--                            <div class="mb-3">-->
-                                <!--                                <label for="slb-xa" class="form-label">Xã:</label>-->
-                                <!--                                <div class="input-group mb-3">-->
-                                <!--                                    <select type="text" class="form-control" aria-label="Recipient's username"-->
-                                <!--                                            aria-describedby="button-quanly-ds-xa" id="slb-xa"></select>-->
-                                <!--                                    <button class="btn btn-outline-secondary" type="button" id="button-quanly-ds-xa"><i-->
-                                <!--                                            class="bi bi-card-list"></i></button>-->
-                                <!--                                </div>-->
-                                <!--                            </div>-->
-
-                                <div class="mb-3">
-                                    <label for="txt-sonha" class="form-label">Số nhà/đường:</label>
-                                    <textarea class="form-control" id="txt-sonha" rows="5"></textarea>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="input-group mb-3">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text">Email:</span>
+                                    </div>
+                                    <input type="text" class="form-control" aria-describedby="basic-addon1"
+                                           id="txt-email">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="input-group mb-3">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text">Tỉnh:</span>
+                                    </div>
+                                    <select class="form-control" aria-describedby="basic-addon1" id="txt-tinh"></select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="input-group mb-3">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text">Xã:</span>
+                                    </div>
+                                    <select class="form-control" aria-describedby="basic-addon1" id="txt-xa"></select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="input-group mb-3">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text">Số nhà/đường:</span>
+                                    </div>
+                                    <input type="text" class="form-control" aria-describedby="basic-addon1"
+                                           id="txt-sonha">
                                 </div>
                             </div>
                         </div>
@@ -291,20 +380,9 @@
                 <div class="modal-footer">
                     <div class="row">
                         <div class="col-md-12 text-end">
-                            <button type="button" class="btn btn-secondary-light class-them-moi"
-                                    onclick="benhNhan('THEM')">
+                            <button type="button" class="btn btn-secondary-light" id="themBenhNhan">
                                 <i class="bi bi-plus-lg"></i>
                                 Thêm
-                            </button>
-                            <button type="button" class="btn btn-secondary-light class-sua-xoa"
-                                    onclick="benhNhan('SUA')">
-                                <i class="bi bi-pencil-square"></i>
-                                Lưu thay đổi
-                            </button>
-                            <button type="button" class="btn btn-secondary-light class-sua-xoa"
-                                    onclick="benhNhan('XOA')">
-                                <i class="bi bi-x-lg" style="color: red"></i>
-                                <label style="color: red">Xóa</label>
                             </button>
                         </div>
                     </div>
