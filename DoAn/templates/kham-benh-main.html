@@ -25,12 +25,12 @@
 <script src="{{ url_for('static', filename='js/diabetesdb.js') }}"></script>
 
 <div class="row">
-    <div class="col-7">
-        <div class="card" style="height: 90vh">
-            <div class="card-header">Danh sách bệnh nhân</div>
+    <div class="col-5">
+        <div class="card">
+            <div class="card-header">Tìm kiếm bệnh nhân</div>
             <div class="card-body">
-                <div class="row">
-                    <div class="col-4">
+                <div class="row" style="margin-top: -10px">
+                    <div class="col-6">
                         <div class="input-group mb-3">
                             <div class="input-group-prepend">
                                 <span class="input-group-text">Ngày khám</span>
@@ -39,16 +39,18 @@
                                    id="txt-search-ngaykham">
                         </div>
                     </div>
-                    <div class="col-4">
+                </div>
+                <div class="row" style="margin-top: -10px">
+                    <div class="col-6">
                         <div class="input-group mb-3">
                             <div class="input-group-prepend">
-                                <span class="input-group-text">Họ tên</span>
+                                <span class="input-group-text">Số CMT</span>
                             </div>
                             <input type="text" class="form-control" aria-describedby="basic-addon1"
-                                   id="txt-search-hoten">
+                                   id="txt-search-socmt">
                         </div>
                     </div>
-                    <div class="col-4">
+                    <div class="col-6">
                         <div class="input-group mb-3">
                             <div class="input-group-prepend">
                                 <span class="input-group-text">Số điện thoại</span>
@@ -58,6 +60,19 @@
                         </div>
                     </div>
                 </div>
+                <div class="row" style="margin-top: -10px">
+                    <div class="col-12">
+                        <div class="input-group mb-3">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text">Họ tên:</span>
+                            </div>
+                            <input type="text" class="form-control" aria-describedby="basic-addon1"
+                                   id="txt-search-hoten">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer" style="text-align: right">
                 <div class="row" style="text-align: right">
                     <div class="col-12">
                         <button type="button" class="btn btn-secondary-light">
@@ -68,34 +83,47 @@
                             <i class="bi bi-arrow-clockwise"></i>
                             Làm mới
                         </button>
-
                     </div>
                 </div>
+            </div>
+        </div>
+        <div class="card" style="height: 90vh; margin-top: 10px">
+            <div class="card-header">Danh sách bệnh nhân</div>
+            <div class="card-body">
                 <div class="row">
                     <div class="col-12">
-                        <table style="height: 100%">
-                            <thead>
-                            <tr>
-                                <th style="width: 10%">ID</th>
-                                <th style="width: 50%">Họ tên</th>
-                                <th style="width: 10%">Ngày sinh</th>
-                                <th style="width: 10%">Nam/Nữ</th>
-                                <th style="width: 15%">Số điện thoại</th>
-                                <th style="width: 5%"></th>
-                            </tr>
-                            </thead>
-                            <tbody id="patientTableBody">
-                            <!-- Patient data will be loaded here -->
-                            </tbody>
-                        </table>
+                        <div class="table-wrapper">
+                            <table style="height: 100%">
+                                <thead>
+                                <tr>
+                                    <th style="width: 10%">ID</th>
+                                    <th style="width: 30%">Họ tên</th>
+                                    <th style="width: 20%">Ngày sinh</th>
+                                    <th style="width: 10%">Nam/Nữ</th>
+                                    <th style="width: 25%">Số điện thoại</th>
+                                    <th style="width: 5%"></th>
+                                </tr>
+                                </thead>
+                                <tbody id="patientTableBody">
+                                <!-- Patient data will be loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-    <div class="col-5">
+    <div class="col-7">
         <div class="card">
-            <div class="card-header">Thông tin bệnh nhân</div>
+            <div class="card-header">
+                <div class="row">
+                    <div class="col-6" style="text-align: left;">Thông tin bệnh nhân</div>
+                    <div class="col-6" style="text-align: right">
+
+                    </div>
+                </div>
+            </div>
             <div class="card-body">
                 <form id="formBenhNhan">
                     <div class="row">
@@ -141,7 +169,7 @@
                         </div>
                     </div>
                     <div class="row" style="margin-top: -10px">
-                        <div class="col-md-12">
+                        <div class="col-md-6">
                             <div class="input-group mb-3">
                                 <div class="input-group-prepend">
                                     <span class="input-group-text">Số CMT:</span>
@@ -150,9 +178,7 @@
                                        id="txt-socmt">
                             </div>
                         </div>
-                    </div>
-                    <div class="row" style="margin-top: -10px">
-                        <div class="col-md-12">
+                        <div class="col-md-6">
                             <div class="input-group mb-3">
                                 <div class="input-group-prepend">
                                     <span class="input-group-text">Số ĐT</span>
@@ -174,7 +200,7 @@
                         </div>
                     </div>
                     <div class="row" style="margin-top: -10px">
-                        <div class="col-md-12">
+                        <div class="col-md-6">
                             <div class="input-group mb-3">
                                 <div class="input-group-prepend">
                                     <span class="input-group-text">Tỉnh:</span>
@@ -182,9 +208,7 @@
                                 <select class="form-control" aria-describedby="basic-addon1" id="txt-tinh"></select>
                             </div>
                         </div>
-                    </div>
-                    <div class="row" style="margin-top: -10px">
-                        <div class="col-md-12">
+                        <div class="col-md-6">
                             <div class="input-group mb-3">
                                 <div class="input-group-prepend">
                                     <span class="input-group-text">Xã:</span>
@@ -209,13 +233,13 @@
             <div class="card-footer" style="text-align: right">
                 <div class="row">
                     <div class="col-12">
-                        <button type="button" class="btn btn-secondary-light">
-                            <i class="bi bi-journal-plus" style="color: green"></i>
-                            <label style="color: green">Thêm lần khám mới</label>
-                        </button>
                         <button type="button" class="btn btn-secondary-light" onclick="clearPatientForm('formBenhNhan')">
-                            <i class="bi bi-stars"></i>
+                            <i class="bi bi-stars" style="color: #00f2fe"></i>
                             Làm mới
+                        </button>
+                        <button type="button" class="btn btn-secondary-light" id="themLanKham">
+                            <i class="bi bi-journal-plus" style="color: green"></i>
+                            <label style="color: green">Thêm lần khám</label>
                         </button>
                         <button type="button" class="btn btn-secondary-light" id="themBenhNhan">
                             <i class="bi bi-plus-lg"></i>
@@ -226,21 +250,95 @@
                             Lưu thay đổi
                         </button>
                         <button type="button" class="btn btn-secondary-light" id="xoaBenhNhan">
-                            <i class="bi bi-x-lg" style="color: red"></i>
+                            <i class="bi bi-person-dash-fill" style="color: red"></i>
                             <label style="color: red">Xóa</label>
                         </button>
+
                     </div>
                 </div>
             </div>
         </div>
-        <div class="card">
-            <div class="card-header">Thông tin bệnh nhân</div>
+        <div class="card" style="margin-top: 10px">
+            <div class="card-header">Thông tin lần khám</div>
             <div class="card-body">
-<!--                Nội dung thông tin khám bệnh sẽ được hiển thị ở đây.-->
+                <div class="row" style="text-align: right">
+                    <div class="col-12">
+                        <button type="button" class="btn btn-secondary-light" onclick="reloadDanhSachLanKham()">
+                            <i class="bi bi-arrow-clockwise"></i>
+                            Làm mới
+                        </button>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-12">
+                        <div class="table-wrapper">
+                            <table style="height: 100%">
+                                <thead>
+                                <tr>
+                                    <th style="width: 10%">ID</th>
+                                    <th style="width: 25%">Ngày khám</th>
+                                    <th style="width: 35%">Bác sĩ</th>
+                                    <th style="width: 10%">Lý do khám</th>
+                                    <th style="width: 20%"></th>
+                                </tr>
+                                </thead>
+                                <tbody id="lanKhamTableBody">
+                                <!-- Patient data will be loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
-
+</div>
+<div class="modal fade" id="lanKhamModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Thông tin lần khám</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="txt-lankham-id">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label>Chiều cao (cm)</label>
+                        <input type="number" class="form-control" id="txt-lankham-chieucao" step="0.1">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label>Cân nặng (kg)</label>
+                        <input type="number" class="form-control" id="txt-lankham-cannang" step="0.1">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label>Huyết áp trên</label>
+                        <input type="number" class="form-control" id="txt-lankham-huyetaptren">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label>Huyết áp dưới</label>
+                        <input type="number" class="form-control" id="txt-lankham-huyetapduoi">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label>Đường huyết</label>
+                        <input type="number" class="form-control" id="txt-lankham-duonghuyet" step="0.1">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label>HbA1c (%)</label>
+                        <input type="number" class="form-control" id="txt-lankham-hba1c" step="0.1">
+                    </div>
+                    <div class="col-12 mb-3">
+                        <label>Mô tả</label>
+                        <textarea class="form-control" id="txt-lankham-mota" rows="3"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-primary" id="capNhatLanKham">Cập nhật</button>
+            </div>
+        </div>
+    </div>
 </div>
 
 </body>

@@ -105,3 +105,25 @@ td {
 tr:hover {
     background: #f4f5f7;
 }
+/* ...existing code... */
+.table-wrapper{
+    /* Điều chỉnh giá trị calc() nếu cần cho phù hợp layout của bạn */
+    max-height: calc(90vh - 240px); /* giới hạn chiều cao trong card (card height là 90vh) */
+    overflow-y: auto;               /* bật thanh cuộn dọc khi nội dung vượt quá */
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Đảm bảo bảng chiếm đủ chiều rộng và các cột không nhảy kích thước */
+.table-wrapper table{
+    border-collapse: collapse;
+}
+
+/* Giữ header cố định khi cuộn */
+.table-wrapper thead th{
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: #f4f5f7; /* cùng màu header hiện tại */
+}
+
+/* ...existing code... */

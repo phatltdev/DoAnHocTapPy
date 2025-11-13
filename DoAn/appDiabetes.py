@@ -11,8 +11,23 @@ from sqlalchemy import text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy import text, func
 from marshmallow import EXCLUDE
+
+from flask import request, jsonify
+from datetime import datetime
+# from DoAn.appDiabetes import app, db, BenhNhan, LanKham
+
 app = Flask(__name__)
 CORS(app)
+
+def _parse_date_any(s):
+    if not s:
+        return None
+    for fmt in ('%d/%m/%Y', '%Y-%m-%d', '%Y-%m-%dT%H:%M:%S'):
+        try:
+            return datetime.strptime(s, fmt)
+        except Exception:
+            continue
+    return None
 
 # --- Redis Connection with connection pooling ---
 redis_pool = redis.ConnectionPool(
@@ -124,16 +139,18 @@ class LanKham(db.Model):
     benh_nhan_id = db.Column(UUID(as_uuid=True), db.ForeignKey('benhnhan.id'), nullable=False)
     ngay_kham = db.Column(db.DateTime(timezone=True), server_default=text('now()'), nullable=False)
     bac_si = db.Column(db.String(100))
-    chieuCao = db.Column(db.Float)
-    canNang = db.Column(db.Float)
-    chisoBMI = db.Column(db.Float)
-    huyetApTren = db.Column(db.String(20))
-    huyetApDuoi = db.Column(db.String(20))
+    chieu_cao = db.Column(db.Float)
+    can_nang = db.Column(db.Float)
+    bmi = db.Column(db.Float)
+    huyet_ap_tren = db.Column(db.Float)
+    huyet_ap_duoi = db.Column(db.Float)
+    duong_huyet = db.Column(db.Float)
+    hba1c = db.Column(db.Float)
     diabetes = db.Column(db.Numeric(1, 0))
     mo_ta = db.Column(db.String(500))
 
 class benhNhanSchema(ma.SQLAlchemyAutoSchema):
-    id = ma.auto_field(dump_only=True)
+    id = ma.auto_field(as_string=True, dump_only=True)
     ho_ten = ma.auto_field(data_key='hoTen', required=True)
     ngay_sinh = ma.auto_field(data_key='namSinh')
     gioi_tinh = ma.auto_field(data_key='gioiTinh')
@@ -151,9 +168,9 @@ class benhNhanSchema(ma.SQLAlchemyAutoSchema):
 
 
 class lanKhamSchema(ma.SQLAlchemyAutoSchema):
-    id = ma.auto_field(dump_only=True)
-    benh_nhan_id = ma.auto_field(as_string=True, data_key='benhNhanId')
-
+    id = ma.auto_field(as_string=True, dump_only=True)
+    benh_nhan_id = ma.auto_field(as_string=True, data_key='idBenhNhan', required=False)
+    bac_si = ma.auto_field(as_string=True, data_key='bacSi', required=False)
     class Meta:
         model = LanKham
         include_fk = True
@@ -976,6 +993,142 @@ def consistency_check():
         })
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
+@app.route('/api/lankham/search', methods=['GET'])
+def search_lankham():
+    benh_nhan_id = request.args.get('benhNhanId')
+
+    if not benh_nhan_id:
+        return jsonify({'error': 'benhNhanId is required'}), 400
+
+    # Build query
+    sql = """
+        SELECT
+            l.id, l.benh_nhan_id, l.ngay_kham, l.bac_si,
+            l.chieu_cao, l.can_nang, l.bmi,
+            l.huyet_ap_tren, l.huyet_ap_duoi,
+            l.duong_huyet, l.hba1c, l.diabetes, l.mo_ta
+        FROM lankham l
+        WHERE l.benh_nhan_id = :benh_nhan_id
+        ORDER BY l.ngay_kham DESC
+    """
+
+    params = {'benh_nhan_id': benh_nhan_id}
+    result = db.session.execute(text(sql), params).fetchall()
+
+    # Map to frontend keys
+    out = []
+    for row in result:
+        out.append({
+            "id": str(row[0]),
+            "idBenhNhan": str(row[1]),
+            "ngayKham": row[2].isoformat() if row[2] else None,
+            "bacSi": row[3],
+            "chieuCao": float(row[4]) if row[4] else None,
+            "canNang": float(row[5]) if row[5] else None,
+            "bmi": float(row[6]) if row[6] else None,
+            "huyetApTren": float(row[7]) if row[7] else None,
+            "huyetApDuoi": float(row[8]) if row[8] else None,
+            "duongHuyet": float(row[9]) if row[9] else None,
+            "hba1c": float(row[10]) if row[10] else None,
+            "diabetes": int(row[11]) if row[11] is not None else None,
+            "moTa": row[12]
+        })
+
+    return jsonify(out)
+
+@app.route('/api/benhnhan/search', methods=['GET'])
+def search_benhnhan():
+    # Query params (all optional)
+    q = request.args.get('q')
+    ho_ten = request.args.get('hoTen')
+    so_cmt = request.args.get('soCMT')
+    so_dien_thoai = request.args.get('soDienThoai')
+    ma_tinh = request.args.get('maTinh')
+    ma_xa = request.args.get('maXa')
+    ngay_kham = _parse_date_any(request.args.get('ngayKham'))
+
+    # Build WHERE conditions
+    conditions = []
+    params = {}
+
+    # If ngayKham is provided, prioritize it and join with lankham
+    if ngay_kham:
+        # Query with join for date filtering
+        sql = """
+            SELECT DISTINCT
+                b.id, b.ho_ten, b.ngay_sinh, b.gioi_tinh,
+                b.so_dien_thoai, b.so_cmnd, b.email,
+                b.ma_tinh, b.ma_xa, b.dia_chi
+            FROM benhnhan b
+            INNER JOIN lankham l ON b.id = l.benh_nhan_id
+        """
+
+        # Add date condition (match whole day)
+        conditions.append("DATE(l.ngay_kham) = DATE(:ngay_kham)")
+        params['ngay_kham'] = ngay_kham
+
+    else:
+        # Query without join for other filters
+        sql = """
+            SELECT
+                b.id, b.ho_ten, b.ngay_sinh, b.gioi_tinh,
+                b.so_dien_thoai, b.so_cmnd, b.email,
+                b.ma_tinh, b.ma_xa, b.dia_chi
+            FROM benhnhan b
+        """
+
+    # Add other search conditions
+    if q:
+        conditions.append("(b.ho_ten ILIKE :q OR b.so_cmnd ILIKE :q OR b.so_dien_thoai ILIKE :q)")
+        params['q'] = f"%{q}%"
+
+    if ho_ten:
+        conditions.append("b.ho_ten ILIKE :ho_ten")
+        params['ho_ten'] = f"%{ho_ten}%"
+
+    if so_cmt:
+        conditions.append("b.so_cmnd ILIKE :so_cmt")
+        params['so_cmt'] = f"%{so_cmt}%"
+
+    if so_dien_thoai:
+        conditions.append("b.so_dien_thoai ILIKE :so_dien_thoai")
+        params['so_dien_thoai'] = f"%{so_dien_thoai}%"
+
+    if ma_tinh:
+        conditions.append("b.ma_tinh = :ma_tinh")
+        params['ma_tinh'] = ma_tinh
+
+    if ma_xa:
+        conditions.append("b.ma_xa = :ma_xa")
+        params['ma_xa'] = ma_xa
+
+    # Add WHERE clause
+    if conditions:
+        sql += " WHERE " + " AND ".join(conditions)
+
+    sql += " ORDER BY b.ho_ten LIMIT 1000"
+
+    # Execute query
+    result = db.session.execute(text(sql), params).fetchall()
+
+    # Map to frontend keys
+    out = []
+    for row in result:
+        out.append({
+            "id": str(row[0]),
+            "hoTen": row[1],
+            "namSinh": row[2].isoformat() if row[2] else None,
+            "gioiTinh": int(row[3]) if row[3] is not None else None,
+            "soDienThoai": row[4],
+            "soCMT": row[5],
+            "email": row[6],
+            "maTinh": row[7],
+            "maXa": row[8],
+            "soNha": row[9]
+        })
+
+    return jsonify(out)
+
 
 if __name__ == '__main__':
     with app.app_context():
