@@ -46,14 +46,17 @@ redis_client = redis.Redis(connection_pool=redis_pool)
 # Multi-node connection for high availability and load balancing
 # Individual node URLs - application will try each until successful
 CLUSTER_NODES = [
-    'postgresql://root@10.8.0.10:26257/diabetesdb?sslmode=disable&application_name=DiabetesDB_Flask_App',
-    'postgresql://root@10.8.0.14:26257/diabetesdb?sslmode=disable&application_name=DiabetesDB_Flask_App'
+    'cockroachdb://root@10.8.0.10:26257/diabetesdb?sslmode=disable&application_name=DiabetesDB_Flask_App',
+    'cockroachdb://root@10.8.0.11:26257/diabetesdb?sslmode=disable&application_name=DiabetesDB_Flask_App',
+    'cockroachdb://root@10.8.0.12:26257/diabetesdb?sslmode=disable&application_name=DiabetesDB_Flask_App',
+    'cockroachdb://root@10.8.0.13:26257/diabetesdb?sslmode=disable&application_name=DiabetesDB_Flask_App',
+    'cockroachdb://root@10.8.0.14:26257/diabetesdb?sslmode=disable&application_name=DiabetesDB_Flask_App'
 ]
 
 # For direct connection to specific node (used after successful health check)
 def get_node_url(host, port=26257):
     """Build connection URL for specific node"""
-    return f'postgresql://root@{host}:{port}/diabetesdb?sslmode=disable&application_name=DiabetesDB_Flask_App'
+    return f'cockroachdb://root@{host}:{port}/diabetesdb?sslmode=disable&application_name=DiabetesDB_Flask_App'
 
 def get_active_connection():
     """Try to connect to any available node in the cluster"""
