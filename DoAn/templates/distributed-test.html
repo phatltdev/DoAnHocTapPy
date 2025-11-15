@@ -306,6 +306,21 @@
     <script>
         const API_BASE = window.location.origin;
 
+        function initTooltips() {
+            if (typeof bootstrap === 'undefined' || !bootstrap.Tooltip) {
+                return;
+            }
+            document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
+                if (el._tooltipInstance) {
+                    el._tooltipInstance.dispose();
+                }
+            });
+            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            tooltipTriggerList.forEach(triggerEl => {
+                triggerEl._tooltipInstance = new bootstrap.Tooltip(triggerEl);
+            });
+        }
+
         // Load all data on page load
         async function loadAllData() {
             await loadNodes();
@@ -572,6 +587,14 @@
                 const distData = await distResponse.json();
                 const distTime = distData.execution_time_ms || 0;
                 
+                const speedup = localTime > distTime ? ((localTime - distTime) / localTime * 100).toFixed(1) : 0;
+                const isFaster = distTime < localTime;
+
+                const localQueryTooltip = 'Endpoint: <code>GET /api/benhnhan</code><br>SQL: <code>SELECT * FROM benhnhan ORDER BY ho_ten DESC</code><br>Executor: Node leaseholder hiện tại';
+                const localPipelineTooltip = 'Luồng xử lý: Browser → Flask → node đang active → trả JSON.<br>Không fan-out sang node khác, toàn bộ dữ liệu đọc từ một leaseholder.';
+                const distQueryTooltip = 'Endpoint: <code>GET /api/cluster/patients-distributed</code><br>SQL: <code>SELECT b.*, t.ten_tinh, x.ten_xa, COUNT(l.id)</code><br>Executor: CockroachDB DistSQL (coordinator fan-out tới các replica)';
+                const distPipelineTooltip = `Luồng xử lý: Browser → Flask → coordinator node → fan-out tới ${distData.nodes_used || 'nhiều'} nodes → tổng hợp kết quả song song.`;
+                
                 let html = `
                     <table class="table comparison-table">
                         <thead>
@@ -583,17 +606,36 @@
                         </thead>
                         <tbody>
                             <tr class="${localTime < distTime ? 'faster' : ''}">
-                                <td><strong>Truy vấn Cục bộ</strong></td>
+                                <td>
+                                    <strong>Truy vấn Cục bộ</strong>
+                                    <span class="ms-1 text-primary" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true" data-bs-title="${localQueryTooltip}">
+                                        <i class="bi bi-question-circle-fill"></i>
+                                    </span>
+                                </td>
                                 <td>${localTime.toFixed(2)} ms</td>
-                                <td>Truy vấn trực tiếp từ một node (${Array.isArray(localData) ? localData.length : 0} bệnh nhân)</td>
+                                <td>
+                                    <span data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true" data-bs-title="${localPipelineTooltip}">
+                                        Truy vấn trực tiếp từ một node (${Array.isArray(localData) ? localData.length : 0} bệnh nhân)
+                                    </span>
+                                </td>
                             </tr>
                             <tr class="${distTime < localTime ? 'faster' : ''}">
-                                <td><strong>Truy vấn Phân tán</strong></td>
-                                <td>${distTime.toFixed(2)} ms</td>
-                                <td>Truy vấn tổng hợp từ ${distData.nodes_used || 'nhiều'} node (${distData.total || 0} bệnh nhân)</td>
+                                <td>
+                                    <strong>Truy vấn Phân tán</strong>
+                                    <span class="ms-1 text-primary" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true" data-bs-title="${distQueryTooltip}">
+                                        <i class="bi bi-question-circle-fill"></i>
+                                    </span>
+                                </td>
+                                <td>${distTime.toFixed(2)} ms ${isFaster ? '<span class="badge bg-success ms-2">⚡ Nhanh hơn ' + speedup + '%</span>' : ''}</td>
+                                <td>
+                                    <span data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true" data-bs-title="${distPipelineTooltip}">
+                                        Truy vấn tổng hợp từ ${distData.nodes_used || 'nhiều'} node (${distData.total || 0} bệnh nhân)
+                                    </span>
+                                </td>
                             </tr>
                         </tbody>
                     </table>
+                    
                     <div class="alert alert-info">
                         <i class="bi bi-info-circle"></i> 
                         <strong>Thông tin phân tán:</strong> 
@@ -601,19 +643,103 @@
                             `Dữ liệu được lấy từ ${distData.nodes_used} node: ${distData.live_nodes.map(n => `Node ${n.node_id}`).join(', ')}` : 
                             'Thông tin node không khả dụng'}
                     </div>
-                    <div class="alert alert-${Math.abs(localTime - distTime) < 50 ? 'success' : 'warning'}">
+                    
+                    ${isFaster ? `
+                    <div class="card border-success mb-3">
+                        <div class="card-header bg-success text-white">
+                            <h6 class="mb-0">
+                                <i class="bi bi-lightning-fill"></i> 
+                                Tại sao Truy vấn Phân tán NHANH HƠN?
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <h6>🔹 1. Xử lý Song song (Parallel Processing)</h6>
+                            <ul>
+                                <li><strong>Chia nhỏ công việc:</strong> CockroachDB tự động phân chia dữ liệu thành các ranges nhỏ</li>
+                                <li><strong>Nhiều node cùng xử lý:</strong> Thay vì 1 node xử lý hết, ${distData.nodes_used} node cùng làm việc đồng thời</li>
+                                <li><strong>Kết hợp kết quả:</strong> Coordinator node tổng hợp kết quả từ các node worker</li>
+                            </ul>
+                            
+                            <h6>🔹 2. Data Locality (Dữ liệu gần gũi)</h6>
+                            <ul>
+                                <li><strong>Replica gần nhất:</strong> Mỗi truy vấn được route đến replica gần nhất (thấp latency)</li>
+                                <li><strong>Leaseholder optimization:</strong> Node giữ lease xử lý read requests nhanh hơn</li>
+                                <li><strong>Giảm network I/O:</strong> Dữ liệu đã được phân tán, không cần transfer giữa các node</li>
+                            </ul>
+                            
+                            <h6>🔹 3. Distributed SQL Engine</h6>
+                            <ul>
+                                <li><strong>DistSQL:</strong> Query executor được tối ưu cho môi trường phân tán</li>
+                                <li><strong>Pushdown optimization:</strong> Filter và aggregation được thực hiện ngay tại node lưu dữ liệu</li>
+                                <li><strong>Vectorized execution:</strong> Xử lý hàng loạt rows cùng lúc thay vì từng row</li>
+                            </ul>
+                            
+                            <h6>🔹 4. Load Balancing</h6>
+                            <ul>
+                                <li><strong>Phân tải tự động:</strong> Requests được phân phối đều trên ${distData.nodes_used} nodes</li>
+                                <li><strong>Tránh hotspot:</strong> Không có node nào bị quá tải</li>
+                                <li><strong>Sử dụng tài nguyên tối đa:</strong> CPU, RAM, Disk I/O của tất cả nodes được dùng hiệu quả</li>
+                            </ul>
+                            
+                            <h6>🔹 5. Caching & Indexing</h6>
+                            <ul>
+                                <li><strong>Distributed cache:</strong> Mỗi node có cache riêng, tổng cache = ${distData.nodes_used}x lớn hơn</li>
+                                <li><strong>Index locality:</strong> Index được lưu cùng data, truy cập nhanh</li>
+                                <li><strong>Range cache:</strong> Metadata về vị trí ranges được cache để routing nhanh</li>
+                            </ul>
+                            
+                            <div class="alert alert-warning mb-0 mt-3">
+                                <strong>⚠️ Lưu ý:</strong> Trong một số trường hợp, truy vấn cục bộ có thể nhanh hơn nếu:
+                                <ul class="mb-0">
+                                    <li>Dữ liệu nhỏ, vừa với 1 node</li>
+                                    <li>Network latency giữa các node cao</li>
+                                    <li>Chi phí coordinate và merge kết quả lớn hơn lợi ích song song</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    ` : `
+                    <div class="card border-primary mb-3">
+                        <div class="card-header bg-primary text-white">
+                            <h6 class="mb-0">
+                                <i class="bi bi-info-circle"></i> 
+                                Tại sao Truy vấn Cục bộ nhanh hơn trong trường hợp này?
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <h6>Các yếu tố ảnh hưởng:</h6>
+                            <ul>
+                                <li><strong>Overhead phân tán:</strong> Chi phí coordinate giữa ${distData.nodes_used} nodes</li>
+                                <li><strong>Network latency:</strong> Thời gian truyền dữ liệu giữa các nodes</li>
+                                <li><strong>Dataset nhỏ:</strong> Dữ liệu có thể vừa với cache của 1 node</li>
+                                <li><strong>Merge cost:</strong> Chi phí tổng hợp kết quả từ nhiều nodes</li>
+                            </ul>
+                            
+                            <div class="alert alert-info mb-0">
+                                <strong>💡 Khi nào phân tán nhanh hơn?</strong>
+                                <ul class="mb-0">
+                                    <li>Dataset lớn (hàng triệu/tỷ rows)</li>
+                                    <li>Query phức tạp với nhiều JOIN, aggregation</li>
+                                    <li>Dữ liệu đã được phân bố đều trên nhiều ranges</li>
+                                    <li>Có nhiều concurrent requests (load cao)</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    `}
+                    
+                    <div class="alert alert-secondary">
                         <i class="bi bi-speedometer2"></i> 
-                        <strong>Phân tích:</strong> 
-                        Chênh lệch thời gian: ${Math.abs(localTime - distTime).toFixed(2)} ms. 
-                        ${Math.abs(localTime - distTime) < 50 ? 
-                            'Hiệu suất tương đương nhau - CockroachDB tối ưu tốt.' : 
-                            localTime < distTime ?
-                                'Truy vấn cục bộ nhanh hơn do không cần phối hợp giữa các node.' :
-                                'Truy vấn phân tán hiệu quả nhờ xử lý song song trên nhiều node.'}
+                        <strong>Tóm tắt hiệu suất:</strong> 
+                        Chênh lệch thời gian: <strong>${Math.abs(localTime - distTime).toFixed(2)} ms</strong>
+                        ${isFaster ? 
+                            ` - Truy vấn phân tán nhanh hơn <strong>${speedup}%</strong> nhờ xử lý song song trên ${distData.nodes_used} nodes.` : 
+                            ' - Truy vấn cục bộ nhanh hơn do dataset nhỏ và overhead phân tán.'}
                     </div>
                 `;
                 
                 resultDiv.innerHTML = html;
+                initTooltips();
             } catch (error) {
                 resultDiv.innerHTML = '<div class="alert alert-danger">Lỗi: ' + error.message + '</div>';
             }
@@ -803,6 +929,7 @@
         // Load data on page load
         document.addEventListener('DOMContentLoaded', function() {
             loadAllData();
+            initTooltips();
         });
     </script>
 </body>

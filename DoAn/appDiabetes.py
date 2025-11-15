@@ -29,19 +29,27 @@ redis_client = redis.Redis(connection_pool=redis_pool)
 
 # --- CockroachDB Connection ---
 # Multi-node connection for high availability and load balancing
-# List of all cluster nodes - will try each one until successful connection
+# Individual node URLs - application will try each until successful
 CLUSTER_NODES = [
-    'cockroachdb://root@10.8.0.10:26257/diabetesdb?sslmode=disable',
-    'cockroachdb://root@10.8.0.14:26257/diabetesdb?sslmode=disable'
+    'postgresql://root@10.8.0.10:26257/diabetesdb?sslmode=disable&application_name=DiabetesDB_Flask_App',
+    'postgresql://root@10.8.0.14:26257/diabetesdb?sslmode=disable&application_name=DiabetesDB_Flask_App'
 ]
+
+# For direct connection to specific node (used after successful health check)
+def get_node_url(host, port=26257):
+    """Build connection URL for specific node"""
+    return f'postgresql://root@{host}:{port}/diabetesdb?sslmode=disable&application_name=DiabetesDB_Flask_App'
 
 def get_active_connection():
     """Try to connect to any available node in the cluster"""
     from sqlalchemy import create_engine
     
-    for i, node_url in enumerate(CLUSTER_NODES):
+    print(f"🔍 Scanning cluster for available nodes...")
+    
+    for i, node_url in enumerate(CLUSTER_NODES, 1):
+        node_address = node_url.split('@')[1].split('/')[0]
         try:
-            print(f"Attempting to connect to node {i+1}: {node_url.split('@')[1].split('/')[0]}")
+            print(f"   Attempting node {i}: {node_address}")
             engine = create_engine(
                 node_url,
                 pool_pre_ping=True,
@@ -49,30 +57,52 @@ def get_active_connection():
                 pool_size=10,
                 max_overflow=20,
                 connect_args={
-                    'application_name': 'DiabetesDB_Flask_App',
-                    'options': '-c statement_timeout=30000',
-                    'connect_timeout': 5  # 5 second timeout
+                    'connect_timeout': 5,
+                    'options': '-c statement_timeout=30000'
                 }
             )
             # Test connection
             with engine.connect() as conn:
-                conn.execute(text("SELECT 1"))
-            print(f"✓ Successfully connected to node {i+1}")
+                result = conn.execute(text("SELECT node_id, address FROM crdb_internal.kv_node_status ORDER BY node_id"))
+                nodes = result.fetchall()
+                print(f"   ✅ Node {i} ({node_address}) is ONLINE")
+                print(f"   📊 Cluster status: {', '.join([f'Node {n[0]} ({n[1]})' for n in nodes])}")
+            engine.dispose()
+            # Successfully connected - return this node URL
             return node_url
         except Exception as e:
-            print(f"✗ Failed to connect to node {i+1}: {e}")
+            print(f"   ❌ Node {i} ({node_address}) is OFFLINE: {str(e)[:80]}")
             continue
     
-    raise Exception("Failed to connect to any CockroachDB node in the cluster!")
+    # If no nodes available, return None
+    print(f"   ⚠️  All nodes are unreachable")
+    return None
 
 # Try to get an active connection
 try:
     active_node = get_active_connection()
-    app.config['SQLALCHEMY_DATABASE_URI'] = active_node
-    print(f"Using primary connection: {active_node.split('@')[1].split('/')[0]}")
+    
+    if active_node:
+        app.config['SQLALCHEMY_DATABASE_URI'] = active_node
+        node_address = active_node.split('@')[1].split('?')[0]
+        print(f"\n✨ Successfully connected to CockroachDB cluster")
+        print(f"🎯 Active connection: {node_address}")
+        print(f"🚀 Application ready to start!\n")
+    else:
+        print(f"\n⚠️  WARNING: No CockroachDB nodes are currently available")
+        print(f"📍 Expected nodes: 10.8.0.10:26257, 10.8.0.14:26257")
+        print(f"🔄 Application will start in LIMITED MODE")
+        print(f"   - API endpoints will attempt auto-reconnection on each request")
+        print(f"   - Please start at least one CockroachDB node")
+        print(f"   - The app will automatically connect when a node becomes available\n")
+        
+        # Use fallback URL but don't fail - let before_request handle reconnection
+        app.config['SQLALCHEMY_DATABASE_URI'] = CLUSTER_NODES[0]
+        
 except Exception as e:
-    print(f"ERROR: {e}")
-    # Fallback to first node (will fail on first request if unreachable)
+    print(f"\n💥 CRITICAL ERROR during startup: {e}")
+    print(f"⚠️  Starting in LIMITED MODE - will retry connections on requests\n")
+    # Don't exit - let the app start and handle reconnection later
     app.config['SQLALCHEMY_DATABASE_URI'] = CLUSTER_NODES[0]
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -227,53 +257,83 @@ def test_node_connectivity():
 def reconnect_to_cluster():
     """Attempt to reconnect to any available node if current connection fails"""
     global db
-    try:
-        # Test current connection
-        db.session.execute(text("SELECT 1"))
-        return True
-    except Exception as e:
-        print(f"Current connection failed: {e}")
-        print("Attempting to reconnect to cluster...")
+    
+    # Get current connection for logging
+    current_uri = app.config.get('SQLALCHEMY_DATABASE_URI', 'unknown')
+    current_node = current_uri.split('@')[1].split('/')[0] if '@' in current_uri else 'unknown'
+    
+    print(f"📡 Current node ({current_node}) is unreachable")
+    print(f"🔍 Scanning {len(CLUSTER_NODES)} nodes for available connection...")
+    
+    # Try each node
+    for i, node_url in enumerate(CLUSTER_NODES, 1):
+        node_address = node_url.split('@')[1].split('/')[0]
         
-        # Try each node
-        for i, node_url in enumerate(CLUSTER_NODES):
-            try:
-                print(f"Trying node {i+1}...")
-                # Update the connection URL
-                app.config['SQLALCHEMY_DATABASE_URI'] = node_url
-                # Recreate the engine
-                db.engine.dispose()
-                db.create_engine(app)
-                
-                # Test new connection
-                with db.engine.connect() as conn:
-                    conn.execute(text("SELECT 1"))
-                
-                print(f"✓ Successfully reconnected to node {i+1}")
-                return True
-            except Exception as retry_error:
-                print(f"✗ Node {i+1} failed: {retry_error}")
-                continue
-        
-        print("Failed to reconnect to any node!")
-        return False
+        # Skip current failed node
+        if node_address in current_uri:
+            print(f"   ⏭️  Skipping current failed node {i}: {node_address}")
+            continue
+            
+        try:
+            print(f"   🔌 Trying node {i}: {node_address}...")
+            
+            # Update the connection URL
+            app.config['SQLALCHEMY_DATABASE_URI'] = node_url
+            
+            # Dispose old engine and create new one
+            db.engine.dispose()
+            from sqlalchemy import create_engine
+            new_engine = create_engine(
+                node_url,
+                pool_pre_ping=True,
+                pool_recycle=3600,
+                pool_size=10,
+                max_overflow=20,
+                connect_args={
+                    'connect_timeout': 5,
+                    'options': '-c statement_timeout=30000'
+                }
+            )
+            
+            # Test new connection
+            with new_engine.connect() as conn:
+                conn.execute(text("SELECT 1"))
+            
+            # If successful, update db.engine
+            db.engine = new_engine
+            
+            print(f"   ✅ Successfully reconnected to node {i}: {node_address}")
+            print(f"   🎯 Active connection: {node_address}")
+            return True
+            
+        except Exception as retry_error:
+            print(f"   ❌ Node {i} ({node_address}) failed: {retry_error}")
+            continue
+    
+    print(f"💀 CRITICAL: All {len(CLUSTER_NODES)} nodes are unreachable!")
+    return False
 
 # Request error handler with auto-reconnect
 @app.before_request
 def before_request():
-    """Check database connection before each request"""
+    """Check database connection before each request and auto-failover if needed"""
     try:
-        # Quick health check
-        db.session.execute(text("SELECT 1"))
-        db.session.commit()
+        # Quick health check with short timeout
+        with db.engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
     except Exception as e:
-        print(f"Database connection error: {e}")
-        # Try to reconnect
-        if not reconnect_to_cluster():
+        print(f"⚠️ Database connection lost: {e}")
+        print(f"🔄 Attempting automatic failover to another node...")
+        
+        # Try to reconnect to any available node
+        if reconnect_to_cluster():
+            print(f"✓ Successfully failed over to backup node")
+            # Connection restored, continue with request
+        else:
             from flask import jsonify
             return jsonify({
                 'error': 'Database cluster unavailable',
-                'message': 'All database nodes are unreachable'
+                'message': 'All database nodes are unreachable. Please check cluster status.'
             }), 503
 
 @app.errorhandler(Exception)
@@ -599,24 +659,35 @@ def cluster_ranges():
     """Get information about data ranges distribution"""
     try:
         query = text("""
-            SELECT range_id, start_key, end_key, 
-                   array_length(replicas, 1) as replica_count,
-                   replicas, lease_holder
-            FROM crdb_internal.ranges
-            WHERE database_name = 'diabetesdb'
+            SELECT 
+                range_id,
+                start_key_pretty,
+                end_key_pretty,
+                replica_count,
+                replicas,
+                lease_holder,
+                table_name
+            FROM [SHOW RANGES FROM DATABASE diabetesdb WITH DETAILS]
             ORDER BY range_id
             LIMIT 50
         """)
         result = db.session.execute(query)
         ranges = []
         for row in result:
+            replicas_list = []
+            if row[4]:
+                try:
+                    replicas_list = list(row[4])
+                except TypeError:
+                    replicas_list = [r.strip() for r in str(row[4]).strip('{}').split(',') if r.strip()]
             ranges.append({
                 'range_id': row[0],
-                'start_key': str(row[1]),
-                'end_key': str(row[2]),
+                'start_key': row[1],
+                'end_key': row[2],
                 'replica_count': row[3],
-                'replicas': row[4] if row[4] else [],
-                'lease_holder': row[5]
+                'replicas': replicas_list,
+                'lease_holder': row[5],
+                'table_name': row[6]
             })
         return jsonify({'success': True, 'ranges': ranges, 'count': len(ranges)})
     except Exception as e:
@@ -629,10 +700,12 @@ def cluster_replication():
         query = text("""
             SELECT 
                 count(*) as total_ranges,
-                sum(CASE WHEN array_length(replicas, 1) >= 2 THEN 1 ELSE 0 END) as replicated_ranges,
-                avg(array_length(replicas, 1)) as avg_replicas
-            FROM crdb_internal.ranges
-            WHERE database_name = 'diabetesdb'
+                sum(CASE WHEN replica_count >= 2 THEN 1 ELSE 0 END) as replicated_ranges,
+                avg(replica_count) as avg_replicas
+            FROM (
+                SELECT replica_count
+                FROM [SHOW RANGES FROM DATABASE diabetesdb WITH DETAILS]
+            ) AS ranges
         """)
         result = db.session.execute(query).fetchone()
         
@@ -652,10 +725,9 @@ def table_distribution():
         query = text("""
             SELECT 
                 table_name,
-                count(DISTINCT range_id) as range_count,
+                count(*) as range_count,
                 array_agg(DISTINCT lease_holder) as nodes
-            FROM crdb_internal.ranges
-            WHERE database_name = 'diabetesdb'
+            FROM [SHOW RANGES FROM DATABASE diabetesdb WITH DETAILS]
             GROUP BY table_name
             ORDER BY table_name
         """)
@@ -665,7 +737,7 @@ def table_distribution():
             tables.append({
                 'table_name': row[0],
                 'range_count': row[1],
-                'nodes': sorted(row[2]) if row[2] else []
+                'nodes': sorted([n for n in row[2] if n is not None]) if row[2] else []
             })
         return jsonify({'success': True, 'tables': tables})
     except Exception as e:
@@ -808,12 +880,30 @@ def failover_test():
 
 @app.route('/api/cluster/patients-by-node/<int:node_id>', methods=['GET'])
 def patients_by_node(node_id):
-    """Get patients data from specific node"""
+    """Get patients data from specific node (or nearest replica)"""
     try:
         import time
         start_time = time.time()
-        
+
+        # Get node information
+        target_node = None
+        node_info_query = text("""
+            SELECT s.node_id, s.address
+            FROM crdb_internal.kv_node_status s
+            WHERE s.node_id = :node_id
+        """)
+        row = db.session.execute(node_info_query, {'node_id': node_id}).fetchone()
+        if row:
+            target_node = {
+                'node_id': row[0],
+                'address': row[1]
+            }
+        else:
+            raise ValueError(f'Node {node_id} not found in cluster metadata')
+
         # Query to get patients with their location information
+        # Note: CockroachDB automatically routes to optimal replicas
+        # Using AS OF SYSTEM TIME follower_read_timestamp() allows reading from any replica
         query = text("""
             SELECT 
                 b.id,
@@ -837,7 +927,7 @@ def patients_by_node(node_id):
             ORDER BY b.created_at DESC
             LIMIT 50
         """)
-        
+
         result = db.session.execute(query).fetchall()
         execution_time = (time.time() - start_time) * 1000
         
@@ -861,10 +951,13 @@ def patients_by_node(node_id):
         return jsonify({
             'success': True,
             'node_id': node_id,
+            'node': target_node,
             'execution_time_ms': round(execution_time, 2),
             'total': len(patients),
             'patients': patients
         })
+    except ValueError as ve:
+        return jsonify({'success': False, 'error': str(ve)}), 404
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
